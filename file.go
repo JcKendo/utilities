@@ -1,6 +1,11 @@
 package utilities
 
-import "os"
+import (
+	"io"
+	"os"
+	"os/signal"
+	"syscall"
+)
 import "github.com/BurntSushi/toml"
 
 func LoadConfig(fileName string, config interface{}) error {
@@ -15,3 +20,14 @@ func LoadConfig(fileName string, config interface{}) error {
 	return err
 }
 
+func RegisterCloseFileSafety(files ...io.Writer) {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigs
+		for _, f := range files {
+			_ = f
+		}
+	}()
+}
